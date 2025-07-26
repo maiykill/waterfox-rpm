@@ -59,21 +59,21 @@ jobs:
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
 
-      # Exit early if no update needed or source unavailable
-      - name: Exit if no update needed
+      # Friendly message when no update is found (just logs, does not fail)
+      - name: No update found message
         if: steps.check_update.outputs.update_needed == 'false'
-        run: |
-          echo "No new Waterfox release to package or source missing on CDN."
-          exit 0
+        run: echo "No new Waterfox release version found; skipping build and release steps."
 
-      # Update spec file version in waterfox/waterfox.spec
+      # Update spec file version in waterfox/waterfox.spec if update needed
       - name: Update spec file version
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           sed -i "s/^Version:.*/Version: $VERSION_NO_V/" waterfox/waterfox.spec
           # Optionally update Source URL or checksum here if needed
 
       # Commit and push any changed files (sync version) with safety checks
       - name: Commit and push updated files (sync version)
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           git config user.name "build-bot"
           git config user.email "actions-build-bot@github.com"
@@ -91,44 +91,51 @@ jobs:
             git push origin ${{ github.ref_name }}
           fi
 
-      # Install rpm and build-essential packages on Ubuntu
+      # Install rpm and build-essential packages on Ubuntu if update needed
       - name: Install rpm and build-essential
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y rpm build-essential
 
-      # Download the official Waterfox source archive from CDN to rpmbuild/SOURCES
+      # Download the official Waterfox source archive to rpmbuild/SOURCES if update needed
       - name: Download Waterfox source archive to rpmbuild SOURCES
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           mkdir -p ~/rpmbuild/SOURCES
           curl -fSL -o ~/rpmbuild/SOURCES/waterfox-${VERSION_NO_V}.tar.bz2 \
             https://cdn1.waterfox.net/waterfox/releases/${VERSION_NO_V}/Linux_x86_64/waterfox-${VERSION_NO_V}.tar.bz2
 
-      # Copy additional source files required by spec to rpmbuild/SOURCES
+      # Copy additional source files required by spec to rpmbuild/SOURCES if update needed
       - name: Copy additional source files to rpmbuild SOURCES
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           cp waterfox/waterfox.desktop ~/rpmbuild/SOURCES/
           cp waterfox/policies.json ~/rpmbuild/SOURCES/
           cp LICENSE ~/rpmbuild/SOURCES/
           cp README.md ~/rpmbuild/SOURCES/
 
-      # Prepare RPM build tree manually (without rpmdev-setuptree)
+      # Prepare RPM build tree manually if update needed
       - name: Prepare RPM build tree manually
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
           cp waterfox/waterfox.spec ~/rpmbuild/SPECS/
 
-      # Build the RPM package manually using rpmbuild with correct spec path
+      # Build the RPM package manually using rpmbuild if update needed
       - name: Build RPM package
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           rpmbuild -ba ~/rpmbuild/SPECS/waterfox.spec
 
-      # List built RPM packages for debugging
+      # List built RPM packages for debugging if update needed
       - name: List built RPM packages
+        if: steps.check_update.outputs.update_needed == 'true'
         run: ls -lh ~/rpmbuild/RPMS/x86_64/
 
-      # Create a GitHub Release with the latest Waterfox tag
+      # Create a GitHub Release with the latest Waterfox tag if update needed
       - name: Create GitHub Release
+        if: steps.check_update.outputs.update_needed == 'true'
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -139,8 +146,9 @@ jobs:
           draft: false
           prerelease: false
 
-      # Upload RPM assets to the created GitHub Release
+      # Upload RPM assets to the created GitHub Release if update needed
       - name: Upload RPM assets to GitHub Release
+        if: steps.check_update.outputs.update_needed == 'true'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
