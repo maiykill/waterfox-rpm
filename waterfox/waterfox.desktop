@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Waterfox
+Comment=Privacy-focused web browser
+Exec=/usr/bin/waterfox
+Icon=waterfox
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;
+StartupNotify=true
+MimeType=text/html;text/xml;application/xhtml+xml;application/xml;application/rss+xml;application/rdf+xml;
+
