@@ -2,7 +2,7 @@
 %global internal_name waterfox
 
 Name:           %{application_name}
-Version:        6.5.10
+Version: 6.5.10
 Release:        1%{?dist}
 Summary:        Waterfox Web Browser
 
