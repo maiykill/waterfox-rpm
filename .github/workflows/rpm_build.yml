@@ -94,11 +94,16 @@ jobs:
           curl -fSL -o ~/rpmbuild/SOURCES/waterfox-${VERSION_NO_V}.tar.bz2 \
             https://cdn1.waterfox.net/waterfox/releases/${VERSION_NO_V}/Linux_x86_64/waterfox-${VERSION_NO_V}.tar.bz2
 
-      # Build the RPM package manually using rpmbuild
+      # Prepare RPM build tree manually (without rpmdev-setuptree)
+      - name: Prepare RPM build tree manually
+        run: |
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          cp waterfox/waterfox.spec ~/rpmbuild/SPECS/
+
+      # Build the RPM package manually using rpmbuild with correct spec path
       - name: Build RPM package
         run: |
-          rpmdev-setuptree
-          rpmbuild -ba waterfox/waterfox.spec
+          rpmbuild -ba ~/rpmbuild/SPECS/waterfox.spec
 
       # List built RPM packages for debugging
       - name: List built RPM packages
