@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repository code including spec file
+      # Checkout repository code including spec file and extra sources
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -93,6 +93,14 @@ jobs:
           mkdir -p ~/rpmbuild/SOURCES
           curl -fSL -o ~/rpmbuild/SOURCES/waterfox-${VERSION_NO_V}.tar.bz2 \
             https://cdn1.waterfox.net/waterfox/releases/${VERSION_NO_V}/Linux_x86_64/waterfox-${VERSION_NO_V}.tar.bz2
+
+      # Copy additional source files required by spec to rpmbuild/SOURCES
+      - name: Copy additional source files to rpmbuild SOURCES
+        run: |
+          cp waterfox/waterfox.desktop ~/rpmbuild/SOURCES/
+          cp waterfox/policies.json ~/rpmbuild/SOURCES/
+          cp waterfox/LICENSE ~/rpmbuild/SOURCES/
+          cp waterfox/README.md ~/rpmbuild/SOURCES/
 
       # Prepare RPM build tree manually (without rpmdev-setuptree)
       - name: Prepare RPM build tree manually
