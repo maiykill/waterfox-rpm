@@ -99,8 +99,8 @@ jobs:
         run: |
           cp waterfox/waterfox.desktop ~/rpmbuild/SOURCES/
           cp waterfox/policies.json ~/rpmbuild/SOURCES/
-          cp waterfox/LICENSE ~/rpmbuild/SOURCES/
-          cp waterfox/README.md ~/rpmbuild/SOURCES/
+          cp LICENSE ~/rpmbuild/SOURCES/
+          cp README.md ~/rpmbuild/SOURCES/
 
       # Prepare RPM build tree manually (without rpmdev-setuptree)
       - name: Prepare RPM build tree manually
