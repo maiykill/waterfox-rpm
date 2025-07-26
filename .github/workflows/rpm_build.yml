@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository code (including the spec file)
+      # Checkout repository code including spec file
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Get latest Waterfox release tag from GitHub API (no 'v' prefix expected)
+      # Get latest Waterfox version from GitHub API (no 'v' prefix expected)
       - name: Get latest Waterfox version from GitHub API
         id: fetch_latest
         run: |
@@ -70,7 +70,7 @@ jobs:
       - name: Update spec file version
         run: |
           sed -i "s/^Version:.*/Version: $VERSION_NO_V/" waterfox/waterfox.spec
-          # Optionally add commands here to update Source URL or checksum
+          # Optionally update Source URL or checksum here if needed
 
       # Commit and push updated spec file
       - name: Commit and push spec update
@@ -81,22 +81,28 @@ jobs:
           git commit -m "Update Waterfox spec to version $VERSION_NO_V" || echo "Nothing to commit"
           git push || echo "Push failed or nothing to push"
 
-      # Install rpm and build-essential packages on Debian/Ubuntu or rpm-build on Fedora/RHEL
-      - name: Install rpm-build and dependencies
+      # Install rpm and build-essential packages on Ubuntu
+      - name: Install rpm and build-essential
         run: |
-          if command -v apt-get >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y rpm build-essential
-          elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf install -y rpm-build
-          fi
+          sudo apt-get update
+          sudo apt-get install -y rpm build-essential
 
-      # Build the RPM package using the spec file
+      # Download the official Waterfox source archive from CDN to rpmbuild/SOURCES
+      - name: Download Waterfox source archive to rpmbuild SOURCES
+        run: |
+          mkdir -p ~/rpmbuild/SOURCES
+          curl -fSL -o ~/rpmbuild/SOURCES/waterfox-${VERSION_NO_V}.tar.bz2 \
+            https://cdn1.waterfox.net/waterfox/releases/${VERSION_NO_V}/Linux_x86_64/waterfox-${VERSION_NO_V}.tar.bz2
+
+      # Build the RPM package manually using rpmbuild
       - name: Build RPM package
-        uses: naveenrajm7/rpmbuild@master
-        id: rpmbuild
-        with:
-          spec_file: waterfox/waterfox.spec
+        run: |
+          rpmdev-setuptree
+          rpmbuild -ba waterfox/waterfox.spec
+
+      # List built RPM packages for debugging
+      - name: List built RPM packages
+        run: ls -lh ~/rpmbuild/RPMS/x86_64/
 
       # Create a GitHub Release with the latest Waterfox tag
       - name: Create GitHub Release
@@ -117,6 +123,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.rpmbuild.outputs.rpm_dir_path }}/*.rpm
+          asset_path: ~/rpmbuild/RPMS/x86_64/*.rpm
           asset_name: waterfox-${{ env.VERSION_NO_V }}.rpm
           asset_content_type: application/x-rpm
