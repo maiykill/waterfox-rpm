@@ -1,0 +1,122 @@
+# Workflow to automatically build RPM and create GitHub Release
+# whenever a new Waterfox release is detected.
+# Runs every 10 minutes or on manual dispatch.
+name: Build RPM on Waterfox Release Check
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # Run every 10 minutes
+  workflow_dispatch: # Allow manual triggering from GitHub UI
+
+jobs:
+  build_and_release_rpm:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code (including the spec file)
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Get latest Waterfox release tag from GitHub API (no 'v' prefix expected)
+      - name: Get latest Waterfox version from GitHub API
+        id: fetch_latest
+        run: |
+          latest_tag=$(curl -s -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/BrowserWorks/Waterfox/releases/latest | jq -r .tag_name)
+          echo "Latest upstream Waterfox tag: $latest_tag"
+          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+          echo "VERSION_NO_V=$latest_tag" >> $GITHUB_ENV
+
+      # Check if the source archive exists on CDN
+      - name: Check source archive on CDN
+        id: check_cdn
+        run: |
+          url="https://cdn1.waterfox.net/waterfox/releases/${VERSION_NO_V}/Linux_x86_64/waterfox-${VERSION_NO_V}.tar.bz2"
+          echo "Checking if source archive exists at $url"
+          if curl --head --silent --fail "$url"; then
+            echo "source_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "source_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Read current spec version from waterfox/waterfox.spec
+      - name: Get current spec version
+        id: get_spec_version
+        run: |
+          spec_version=$(grep -m1 '^Version:' waterfox/waterfox.spec | awk '{print $2}')
+          echo "Current spec file version: $spec_version"
+          echo "SPEC_VERSION=$spec_version" >> $GITHUB_ENV
+
+      # Decide if update/build is needed based on version and source existence
+      - name: Decide on update necessity
+        id: check_update
+        run: |
+          if [[ "$VERSION_NO_V" == "$SPEC_VERSION" ]]; then
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.check_cdn.outputs.source_exists }}" == "true" ]]; then
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Exit early if no update needed or source unavailable
+      - name: Exit if no update needed
+        if: steps.check_update.outputs.update_needed == 'false'
+        run: |
+          echo "No new Waterfox release to package or source missing on CDN."
+          exit 0
+
+      # Update spec file version in waterfox/waterfox.spec
+      - name: Update spec file version
+        run: |
+          sed -i "s/^Version:.*/Version: $VERSION_NO_V/" waterfox/waterfox.spec
+          # Optionally add commands here to update Source or checksum
+
+      # Commit and push updated spec file
+      - name: Commit and push spec update
+        run: |
+          git config user.name "build-bot"
+          git config user.email "actions-build-bot@github.com"
+          git add waterfox/waterfox.spec
+          git commit -m "Update Waterfox spec to version $VERSION_NO_V" || echo "Nothing to commit"
+          git push || echo "Push failed or nothing to push"
+
+      # Install rpm-build package (if not already present)
+      - name: Install rpm-build package
+        run: |
+          if command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y rpm-build
+          elif command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rpm-build
+          fi
+
+      # Build RPM package with the spec file
+      - name: Build RPM package
+        uses: naveenrajm7/rpmbuild@master
+        id: rpmbuild
+        with:
+          spec_file: waterfox/waterfox.spec
+
+      # Create a GitHub Release with the latest Waterfox tag
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.LATEST_TAG }}
+          release_name: Waterfox ${{ env.LATEST_TAG }} RPM Release
+          draft: false
+          prerelease: false
+
+      # Upload RPM assets to the created GitHub Release
+      - name: Upload RPM assets to GitHub Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.rpmbuild.outputs.rpm_dir_path }}/*.rpm
+          asset_name: waterfox-${{ env.VERSION_NO_V }}.rpm
+          asset_content_type: application/x-rpm
