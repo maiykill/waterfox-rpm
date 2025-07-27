@@ -56,18 +56,18 @@ jobs:
           fi
 
       - name: No update found message
-        # if: steps.check_update.outputs.update_needed == 'false'
+        if: steps.check_update.outputs.update_needed == 'false'
         run: echo "No new Waterfox release version found; skipping build and release steps."
 
       - name: Update spec file version and changelog
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           sed -i "s/^Version:.*/Version: $VERSION_NO_V/" waterfox/waterfox.spec
           current_date=$(date '+%a %b %d %Y')
           sed -i "/^%changelog$/a * $current_date build-bot <actions-build-bot@github.com> - $VERSION_NO_V-1\\n- Updated to Waterfox $VERSION_NO_V" waterfox/waterfox.spec
 
       - name: Commit and push updated files (sync version)
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           git config user.name "build-bot"
           git config user.email "actions-build-bot@github.com"
@@ -82,20 +82,20 @@ jobs:
           fi
 
       - name: Install rpm and build-essential
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y rpm build-essential
 
       - name: Download Waterfox source archive to rpmbuild SOURCES
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           mkdir -p ~/rpmbuild/SOURCES
           curl -fSL -o ~/rpmbuild/SOURCES/waterfox-${VERSION_NO_V}.tar.bz2 \
             https://cdn1.waterfox.net/waterfox/releases/${VERSION_NO_V}/Linux_x86_64/waterfox-${VERSION_NO_V}.tar.bz2
 
       - name: Copy additional source files to rpmbuild SOURCES
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           cp waterfox/waterfox.desktop ~/rpmbuild/SOURCES/
           cp waterfox/policies.json ~/rpmbuild/SOURCES/
@@ -103,22 +103,22 @@ jobs:
           cp README.md ~/rpmbuild/SOURCES/
 
       - name: Prepare RPM build tree manually
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
           cp waterfox/waterfox.spec ~/rpmbuild/SPECS/
 
       - name: Build RPM package
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: |
           rpmbuild -ba ~/rpmbuild/SPECS/waterfox.spec
 
       - name: List built RPM packages
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         run: ls -lh ~/rpmbuild/RPMS/x86_64/
 
       - name: Create GitHub Release and Upload RPM
-        # if: steps.check_update.outputs.update_needed == 'true'
+        if: steps.check_update.outputs.update_needed == 'true'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.LATEST_TAG }}
