@@ -104,6 +104,8 @@ rm -rf %{buildroot}
 %doc %{_docdir}/%{application_name}/README.md
 
 %changelog
+* Sun Jul 27 2025 build-bot <actions-build-bot@github.com> - 6.5.10-1
+- Updated to Waterfox 6.5.10
 * Sat Jul 26 2025 maiykill <70015530+maiykill@users.noreply.github.com> - 6.5.10-1
 - Initial build of Waterfox 6.5.10 with policies.json and docs included
 
