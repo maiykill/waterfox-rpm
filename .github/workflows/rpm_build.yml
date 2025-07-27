@@ -65,11 +65,13 @@ jobs:
         if: steps.check_update.outputs.update_needed == 'false'
         run: echo "No new Waterfox release version found; skipping build and release steps."
 
-      # Update spec file version if update needed
-      - name: Update spec file version
+      # Update spec file version and changelog if update needed
+      - name: Update spec file version and changelog
         if: steps.check_update.outputs.update_needed == 'true'
         run: |
           sed -i "s/^Version:.*/Version: $VERSION_NO_V/" waterfox/waterfox.spec
+          current_date=$(date '+%a %b %d %Y')
+          sed -i "/^%changelog$/a * $current_date build-bot <actions-build-bot@github.com> - $VERSION_NO_V-1\\n- Updated to Waterfox $VERSION_NO_V" waterfox/waterfox.spec
 
       # Commit and push updated files (sync version) with safety checks
       - name: Commit and push updated files (sync version)
@@ -77,13 +79,11 @@ jobs:
         run: |
           git config user.name "build-bot"
           git config user.email "actions-build-bot@github.com"
-
           git add waterfox/waterfox.spec
-
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore(waterfox): sync version updates for ${{ env.VERSION_NO_V }}"
+            git commit -m "sync: waterfox.spec to ${{ env.VERSION_NO_V }}"
             git fetch origin ${{ github.ref_name }}
             git rebase origin/${{ github.ref_name }}
             git push origin ${{ github.ref_name }}
@@ -144,7 +144,7 @@ jobs:
           draft: false
           prerelease: false
 
-      # Upload RPM assets with shogo82148/actions-upload-release-asset when update needed
+      # Upload RPM assets to GitHub Release
       - name: Upload RPM assets to GitHub Release
         if: steps.check_update.outputs.update_needed == 'true'
         uses: shogo82148/actions-upload-release-asset@v1
