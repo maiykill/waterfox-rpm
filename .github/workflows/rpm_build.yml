@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@8edcb1bdb4e267140fa742c62e395cd74f332709
+        uses: actions/checkout@v4.2.2
 
       - name: Get latest Waterfox version from GitHub API
         id: fetch_latest
