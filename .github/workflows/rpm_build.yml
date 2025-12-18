@@ -20,8 +20,12 @@ jobs:
       - name: Get latest Waterfox version from GitHub API
         id: fetch_latest
         run: |
-          latest_tag=$(curl -s -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/BrowserWorks/Waterfox/releases/latest | jq -r .tag_name)
+          RESPONSE=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/repos/BrowserWorks/Waterfox/releases/latest)
+          latest_tag=$(echo "$RESPONSE" | jq -e -r .tag_name)
+          if [ -z "$latest_tag" ] || [ "$latest_tag" == "null" ]; then
+            echo "::error::GitHub API returned a null version. Stopping to prevent corrupted commit."
+            exit 1
+          fi
           echo "Latest upstream Waterfox tag: $latest_tag"
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
           echo "VERSION_NO_V=$latest_tag" >> $GITHUB_ENV
@@ -47,9 +51,7 @@ jobs:
       - name: Decide on update necessity
         id: check_update
         run: |
-          if [[ "$VERSION_NO_V" == "$SPEC_VERSION" ]]; then
-            echo "update_needed=false" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.check_cdn.outputs.source_exists }}" == "true" ]]; then
+          if [[ "$VERSION_NO_V" != "null" ]] && [[ "$VERSION_NO_V" != "$SPEC_VERSION" ]] && [[ "${{ steps.check_cdn.outputs.source_exists }}" == "true" ]]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
           else
             echo "update_needed=false" >> $GITHUB_OUTPUT
