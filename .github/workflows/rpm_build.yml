@@ -20,34 +20,36 @@ jobs:
       - name: Get latest Waterfox version from GitHub API
         id: fetch_latest
         run: |
-          latest_tag="null"
+          latest_tag=""
           attempt=0
-          max_attempts=15
+          max_attempts=5
 
-          while [[ "$latest_tag" == "null" || -z "$latest_tag" ]]; do
+          while [[ -z "$latest_tag" || "$latest_tag" == "latest" ]]; do
             if (( attempt >= max_attempts )); then
-              echo "::error::Reached max retries. GitHub API is unresponsive."
+              echo "::error::Failed to resolve latest release redirect after $max_attempts attempts."
               exit 1
             fi
 
-            echo "Attempting to fetch tag (Attempt $((attempt+1)))..."
+            echo "Fetching latest release tag (Attempt $((attempt+1)))..."
             
-            RESPONSE=$(curl -sSL -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/BrowserWorks/Waterfox/releases/latest) || true
+            # 1. -sI gets only the headers (very fast)
+            latest_tag=$(curl -sI https://github.com/BrowserWorks/Waterfox/releases/latest | \
+                         grep -i '^location:' | \
+                         awk -F/ '{print $NF}' | \
+                         tr -d '\r')
 
-            latest_tag=$(echo "$RESPONSE" | jq -r '.tag_name // "null"' 2>/dev/null || echo "null")
-
-            if [[ "$latest_tag" == "null" ]]; then
-              echo "::warning::Invalid response. API said: $RESPONSE"
-              echo "Retrying in 10 seconds..."
-              sleep 10
+            if [[ -z "$latest_tag" || "$latest_tag" == "latest" ]]; then
+              echo "::warning::Redirect not followed correctly. Retrying..."
+              sleep 5
               ((attempt++))
             fi
           done
 
-          echo "Latest Version is: $latest_tag"
+          latest_tag=$(echo "$latest_tag" | xargs)
+
+          echo "Detected Latest Stable: $latest_tag"
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
-          echo "VERSION_NO_V=$latest_tag" >> $GITHUB_ENV
+          echo "VERSION_NO_V=${latest_tag#v}" >> $GITHUB_ENV
 
       - name: Check source archive on CDN
         id: check_cdn
