@@ -2,7 +2,7 @@
 %global internal_name waterfox
 
 Name:           %{application_name}
-Version: 6.6.7
+Version: 6.6.8
 Release:        1%{?dist}
 Summary:        Waterfox Web Browser
 
@@ -104,6 +104,8 @@ rm -rf %{buildroot}
 %doc %{_docdir}/%{application_name}/README.md
 
 %changelog
+* Mon Jan 12 2026 build-bot <actions-build-bot@github.com> - 6.6.8-1
+- Updated to Waterfox 6.6.8
 * Fri Dec 19 2025 build-bot <actions-build-bot@github.com> - 6.6.7-1
 - Updated to Waterfox 6.6.7
 * Thu Dec 18 2025 build-bot <actions-build-bot@github.com> - 6.6.6-1
