@@ -2,8 +2,8 @@ name: Build RPM on Waterfox Release Check
 
 on:
   schedule:
-    - cron: "*/10 * * * *" # Run every 10 minutes
-  workflow_dispatch: # Manual trigger
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write # Needed for commit and release creation
@@ -144,10 +144,19 @@ jobs:
         if: steps.check_update.outputs.update_needed == 'true'
         uses: ncipollo/release-action@v1
         with:
+          allowUpdates: true
+          removeArtifacts: true
+          replacesArtifacts: true
           tag: ${{ env.LATEST_TAG }}
           name: "Waterfox ${{ env.LATEST_TAG }} RPM Release"
           artifacts: "/home/runner/rpmbuild/RPMS/x86_64/waterfox-${{ env.VERSION_NO_V }}-1.x86_64.rpm"
-          body: "Automated RPM package for Waterfox ${{ env.LATEST_TAG }}"
+          body: |
+            ### 📦 Automated RPM Release
+            This is an RPM build of Waterfox ${{ env.LATEST_TAG }} for x86_64.
+
+            **Release Notes:**
+            You can find the official changelog and release notes here:
+            [Waterfox ${{ env.LATEST_TAG }} Official Notes](https://github.com/BrowserWorks/waterfox/releases/tag/${{ env.LATEST_TAG }})
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
