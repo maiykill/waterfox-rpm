@@ -99,7 +99,7 @@ jobs:
             echo "New version detected, resetting Release to 1"
             sed -i "s/^Version:.*/Version:         $VERSION_NO_V/" waterfox/waterfox.spec
           else
-            sed -i "s/^Release:.*/Release:         1%{?dist}/" waterfox/waterfox.spec
+            sed -i "s/^Release:.*/Release:        1%{?dist}/" waterfox/waterfox.spec
             echo "Version is the same, preserving manual Release bump"
           fi
           current_date=$(date '+%a %b %d %Y')
