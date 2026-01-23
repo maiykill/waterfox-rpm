@@ -106,6 +106,8 @@ rm -rf %{buildroot}
 %changelog
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-5
 - local release bump / spec update
+* Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-5
+- local release bump / spec update
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-1
 - Updated to Waterfox 6.6.8
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-1
