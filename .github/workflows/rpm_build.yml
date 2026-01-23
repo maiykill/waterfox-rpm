@@ -78,12 +78,13 @@ jobs:
         id: check_update
         run: |
           SPEC_CHANGED=$(git diff --name-only HEAD^ HEAD | grep "waterfox/waterfox.spec" || true)
+          LAST_AUTHOR=$(git log -1 --format='%an')
           if [[ "$VERSION_NO_V" != "null" ]] && [[ "$VERSION_NO_V" != "$SPEC_VERSION" ]] && [[ "${{ steps.check_cdn.outputs.source_exists }}" == "true" ]]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
             echo "Reason: New version detected ($VERSION_NO_V)"
-          elif [[ -n "$SPEC_CHANGED" ]]; then
+          elif [[ -n "$SPEC_CHANGED" ]] && [[ "$LAST_AUTHOR" != "build-bot" ]]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
-            echo "Reason: Manual spec file change detected"
+            echo "Reason: Manual spec file change detected from $LAST_AUTHOR"
           else
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
