@@ -3,7 +3,7 @@
 
 Name:           %{application_name}
 Version:        6.6.8
-Release:         2%{?dist}
+Release:        5%{?dist}
 Summary:        Waterfox Web Browser
 
 License:        MPL-2.0
