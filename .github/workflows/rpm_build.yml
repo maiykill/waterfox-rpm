@@ -68,8 +68,11 @@ jobs:
         id: get_spec_version
         run: |
           spec_version=$(grep -m1 '^Version:' waterfox/waterfox.spec | awk '{print $2}')
-          echo "Current spec file version: $spec_version"
+          spec_release=$(grep -m1 '^Release:' waterfox/waterfox.spec | awk '{print $2}' | cut -d'%' -f1)
+          echo "Current version tag: $spec_version"
+          echo "Current release tag: $spec_release"
           echo "SPEC_VERSION=$spec_version" >> $GITHUB_ENV
+          echo "SPEC_RELEASE=$spec_release" >> $GITHUB_ENV
 
       - name: Decide on update necessity
         id: check_update
@@ -114,7 +117,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "sync: waterfox.spec to ${{ env.VERSION_NO_V }}"
+            git commit -m "sync: waterfox.spec to ${{ env.VERSION_NO_V }}-${{ env.SPEC_RELEASE }}"
             git fetch origin ${{ github.ref_name }}
             git rebase origin/${{ github.ref_name }}
             git push origin ${{ github.ref_name }}
@@ -161,14 +164,14 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          removeArtifacts: true
+          removeArtifacts: false
           replacesArtifacts: true
-          tag: ${{ env.LATEST_TAG }}
-          name: "Waterfox ${{ env.LATEST_TAG }} RPM Release"
+          tag: "${{ env.LATEST_TAG }}-${{ env.SPEC_RELEASE }}"
+          name: "Waterfox ${{ env.LATEST_TAG }}-${{ env.SPEC_RELEASE }} RPM"
           artifacts: "/home/runner/rpmbuild/RPMS/x86_64/waterfox-${{ env.VERSION_NO_V }}-*.x86_64.rpm"
           body: |
             ### 📦 Automated RPM Release
-            This is an RPM build of Waterfox ${{ env.LATEST_TAG }} for x86_64.
+            This is an RPM build of Waterfox ${{ env.LATEST_TAG }}-${{ env.SPEC_RELEASE}} for x86_64.
 
             **Release Notes:**
             You can find the official changelog and release notes here:
