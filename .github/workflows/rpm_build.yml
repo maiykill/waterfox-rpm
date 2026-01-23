@@ -95,15 +95,19 @@ jobs:
       - name: Update spec file version and changelog
         if: steps.check_update.outputs.update_needed == 'true'
         run: |
+          current_date=$(date '+%a %b %d %Y')
+
           if [[ "$VERSION_NO_V" != "$SPEC_VERSION" ]]; then
-            echo "New version detected"
+            echo "New upstream version detected. Resetting to Release 1."
             sed -i "s/^Version:.*/Version:         $VERSION_NO_V/" waterfox/waterfox.spec
             sed -i "s/^Release:.*/Release:         1%{?dist}/" waterfox/waterfox.spec
-            current_date=$(date '+%a %b %d %Y')
             sed -i "/^%changelog$/a * $current_date build-bot <actions-build-bot@github.com> - $VERSION_NO_V-1\\n- Updated to Waterfox $VERSION_NO_V" waterfox/waterfox.spec
+            echo "UPDATED_RELEASE=1" >> $GITHUB_ENV
           else
-            current_date=$(date '+%a %b %d %Y')
-            sed -i "/^%changelog$/a * $current_date build-bot <actions-build-bot@github.com> - $VERSION_NO_V-$SPEC_RELEASE\\n- local release bump / spec update" waterfox/waterfox.spec
+            echo "Manual bump detected. Reading current Release from file."
+            ACTUAL_RELEASE=$(grep -m1 '^Release:' waterfox/waterfox.spec | awk '{print $2}' | cut -d'%' -f1)
+            sed -i "/^%changelog$/a * $current_date build-bot <actions-build-bot@github.com> - $VERSION_NO_V-${ACTUAL_RELEASE}\\n- local release bump / spec update" waterfox/waterfox.spec
+            echo "UPDATED_RELEASE=${ACTUAL_RELEASE}" >> $GITHUB_ENV
           fi
 
       - name: Commit and push updated files (sync version)
