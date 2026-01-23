@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 2
 
       - name: Get latest Waterfox version from GitHub API
         id: fetch_latest
@@ -72,8 +74,16 @@ jobs:
       - name: Decide on update necessity
         id: check_update
         run: |
+          SPEC_CHANGED=$(git diff --name-only HEAD^ HEAD | grep "waterfox/waterfox.spec" || true)
           if [[ "$VERSION_NO_V" != "null" ]] && [[ "$VERSION_NO_V" != "$SPEC_VERSION" ]] && [[ "${{ steps.check_cdn.outputs.source_exists }}" == "true" ]]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "Reason: New version detected ($VERSION_NO_V)"
+          elif [[ -n "$SPEC_CHANGED" ]]; then
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "Reason: Manual spec file change detected"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "Reason: Manual workflow trigger"
           else
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
@@ -85,7 +95,13 @@ jobs:
       - name: Update spec file version and changelog
         if: steps.check_update.outputs.update_needed == 'true'
         run: |
-          sed -i "s/^Version:.*/Version: $VERSION_NO_V/" waterfox/waterfox.spec
+          if [[ "$VERSION_NO_V" != "$SPEC_VERSION" ]]; then
+            echo "New version detected, resetting Release to 1"
+            sed -i "s/^Version:.*/Version:         $VERSION_NO_V/" waterfox/waterfox.spec
+            sed -i "s/^Release:.*/Release:         1%{?dist}/" waterfox/waterfox.spec
+          else
+            echo "Version is the same, preserving manual Release bump"
+          fi
           current_date=$(date '+%a %b %d %Y')
           sed -i "/^%changelog$/a * $current_date build-bot <actions-build-bot@github.com> - $VERSION_NO_V-1\\n- Updated to Waterfox $VERSION_NO_V" waterfox/waterfox.spec
 
@@ -149,7 +165,7 @@ jobs:
           replacesArtifacts: true
           tag: ${{ env.LATEST_TAG }}
           name: "Waterfox ${{ env.LATEST_TAG }} RPM Release"
-          artifacts: "/home/runner/rpmbuild/RPMS/x86_64/waterfox-${{ env.VERSION_NO_V }}-1.x86_64.rpm"
+          artifacts: "/home/runner/rpmbuild/RPMS/x86_64/waterfox-${{ env.VERSION_NO_V }}-*.x86_64.rpm"
           body: |
             ### 📦 Automated RPM Release
             This is an RPM build of Waterfox ${{ env.LATEST_TAG }} for x86_64.
