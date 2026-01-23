@@ -112,6 +112,8 @@ rm -rf %{buildroot}
 - Updated to Waterfox 6.6.8
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-1
 - Updated to Waterfox 6.6.8
+* Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-1
+- Updated to Waterfox 6.6.8
 * Mon Jan 12 2026 build-bot <actions-build-bot@github.com> - 6.6.8-1
 - Updated to Waterfox 6.6.8
 * Fri Dec 19 2025 build-bot <actions-build-bot@github.com> - 6.6.7-1
