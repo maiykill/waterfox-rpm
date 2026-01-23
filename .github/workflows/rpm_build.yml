@@ -84,9 +84,6 @@ jobs:
           elif [[ -n "$SPEC_CHANGED" ]]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
             echo "Reason: Manual spec file change detected"
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "update_needed=true" >> $GITHUB_OUTPUT
-            echo "Reason: Manual workflow trigger"
           else
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
