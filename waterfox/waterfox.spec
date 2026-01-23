@@ -108,6 +108,8 @@ rm -rf %{buildroot}
 - local release bump / spec update
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-6
 - local release bump / spec update
+* Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-6
+- local release bump / spec update
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-5
 - local release bump / spec update
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-5
