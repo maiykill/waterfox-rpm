@@ -2,8 +2,8 @@
 %global internal_name waterfox
 
 Name:           %{application_name}
-Version:        6.6.8
-Release:        7%{?dist}
+Version:         6.6.9
+Release:         1%{?dist}
 Summary:        Waterfox Web Browser
 
 License:        MPL-2.0
@@ -104,6 +104,8 @@ rm -rf %{buildroot}
 %doc %{_docdir}/%{application_name}/README.md
 
 %changelog
+* Tue Feb 24 2026 build-bot <actions-build-bot@github.com> - 6.6.9-1
+- Updated to Waterfox 6.6.9
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-7
 - local release bump / spec update
 * Fri Jan 23 2026 build-bot <actions-build-bot@github.com> - 6.6.8-6
